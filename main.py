@@ -4,49 +4,72 @@ from bertopic_model import *
 from scrapy_fetch import fetch_data
 import pandas
 from recommender import *
+import os
+
 
 st.set_page_config(layout="wide")
+
+
+def fetch_latest():
+    with st.spinner('Fetching latest articles and creating topics...'):
+
+        fetch_data()
+
+        # Load data
+        df = pd.read_csv('./data/data.csv', delimiter=',', header=0)
+
+        df = df.dropna()
+
+        df = df.drop_duplicates(subset=['processed_title'])
+
+        df = df.sample(frac=1).reset_index(drop=True)
+
+        df.to_csv('./data/data.csv')
+
+        # Tokenize data
+
+        docs = [str(i) for i in df['processed_title'].tolist()]
+
+        run(docs)
+
+        print("Topics created")
+
 
 def main():
     st.title("News Articles and Topics")
 
-    # with st.spinner('Fetching data...'):
-    #     fetch_data()
+    st.button("Fetch Latest", on_click=fetch_latest)
 
-    with st.spinner('Running BERTopic model...'):
-     
-        # Load data
-        df = pd.read_csv('data.csv', delimiter=',', header=0)
+    if not os.path.exists('./data/data.csv') or not os.path.exists('./data/embeddings.pkl') or not os.path.exists('./data/topic_model'):
+        fetch_latest()
+    df = pd.read_csv('./data/data.csv', delimiter=',', header=0)
 
-        # Tokenize data
-
-        docs = [str(i) for i in df['title'].tolist()]
-
-        # run(docs)
-
-        topics=get_topics()
-
-        # Concatenate data and topics
-        topics_df = pd.DataFrame({'topic': topics})
-        df_with_topics = pd.concat([df, topics_df], axis=1)
-        df_with_topics['topic'] = df_with_topics['topic'].astype(str)
+    topics = get_topics()
+    topic_labels = get_topic_labels()
+    # Concatenate data and topics
+    topics_df = pd.DataFrame({'topic': topics})
+    df_with_topics = pd.concat([df, topics_df], axis=1)
+    df_with_topics['topic'] = df_with_topics['topic'].astype(str)
 
     # display the dataframe
 
-    data=df_with_topics
-        # Set page size and number of pages
+    # sort data by published date
+    data = df_with_topics
+    # Set page size and number of pages
     page_size = 10
     num_pages = int(len(data) / page_size)
 
+    col1, col2 = st.columns([1, 2], gap="large")
+
     # Create pagination controls
-    page_num = st.number_input("Page", value=1, min_value=1, max_value=num_pages, step=1)
+    page_num = st.number_input(
+        "Page", value=1, min_value=1, max_value=num_pages, step=1)
     offset = (page_num - 1) * page_size
 
     # Create a container for the table
     container = st.container()
 
     # Create columns for each data field
-    col1, col2 = st.columns([1,2])
 
     # Iterate over data rows and display the current page
     for i in range(offset, offset + page_size):
@@ -54,25 +77,30 @@ def main():
             break
         row = data.iloc[i]
         with container:
-            col1.write(f"**{row['title']}**")
+            col1.write(f"**{row['title'].strip()}**")
             col1.write(row['link'])
             col1.write(row['published_date'])
-            col1.write("Belongs to topic: "+ row['topic'])
-            if col1.button("View", key=i):
-                article=data.iloc[i]
-                recommend_articles(article,data,)
-                col2._iframe(article.link, height=500, scrolling=True)
+            col1.write("Belongs to topic: " +
+                       row['topic'] + " which is about ")
 
+            if col1.button("View", key=i):
+                article = data.iloc[i]
+
+                recommended = recommend_articles(
+                    article, data, load_embeddings())
+                # remove the article itself from the recommendations
+                recommended = recommended[recommended['link']
+                                          != article['link']]
+                col2._iframe(article.link, height=500, scrolling=True)
+                col2.write("**Recommended articles:**")
+                for index, row in recommended.iterrows():
+                    col2.write(f"**{row['title'].strip()}**")
+                    col2.write(row['link'])
+                    col2.write(row['published_date'])
+                    col2.write("Belongs to topic: " + row['topic'])
+                    col2.divider()
 
             col1.divider()
-            
-
-    # Create pagination buttons
-    if page_num > 1:
-        st.button("Previous", key="prev")
-    if page_num < num_pages:
-        st.button("Next", key="next")
-
 
 
 if __name__ == '__main__':

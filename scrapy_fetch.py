@@ -4,24 +4,22 @@ from dotenv import load_dotenv
 import csv
 
 
-file_path="/Users/samyuktha/recommender-system/data/"
+file_path = "./data/"
 # get all jobs for a spider
 
-def get_items(project,spider_name):
+
+def get_items(project, spider_name):
     jobs = project.jobs.list(spider=spider_name)
 
     print(jobs)
 
     # get all keys from jobs
 
-    keys= [job['key'] for job in jobs]
-
+    keys = [job['key'] for job in jobs]
 
     # get latest job
 
-    latest=keys[0]
-
-  
+    latest = keys[0]
 
     job = project.jobs.get(latest)
 
@@ -29,13 +27,14 @@ def get_items(project,spider_name):
 
     for item in items:
 
-        decoded_dict = {key.decode('utf-8'): value.decode('utf-8') for key, value in item.items()}
+        decoded_dict = {key.decode('utf-8'): value.decode('utf-8')
+                        for key, value in item.items()}
 
         print(decoded_dict.values())
 
         with open(file_path+'data.csv', mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(list(decoded_dict.values())[:3])
+            writer.writerow(list(decoded_dict.values())[:4])
 
 
 def fetch_data():
@@ -52,7 +51,6 @@ def fetch_data():
 
     client = ScrapinghubClient(api_key)
 
-
     # Get a project
 
     project = client.get_project(project_id)
@@ -63,11 +61,7 @@ def fetch_data():
 
     open(file_path+'data.csv', 'w').close()
     with open(file_path+'data.csv', mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['title','link','published_date'])
+        writer = csv.writer(file)
+        writer.writerow(['processed_title', 'title', 'link', 'published_date'])
     for spider in spiders:
-        get_items(project,spider['id'])
-
-
-
-
+        get_items(project, spider['id'])
