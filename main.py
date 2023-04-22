@@ -36,16 +36,21 @@ def fetch_latest():
 
 
 def main():
-    st.title("News Articles and Topics")
-
-    st.button("Fetch Latest", on_click=fetch_latest)
 
     if not os.path.exists('./data/data.csv') or not os.path.exists('./data/embeddings.pkl') or not os.path.exists('./data/topic_model'):
         fetch_latest()
     df = pd.read_csv('./data/data.csv', delimiter=',', header=0)
 
     topics = get_topics()
-    topic_labels = get_topic_labels()
+    topic_info = get_topic_info()
+
+    st.title("News Articles and Topics")
+
+    with st.sidebar:
+        st.button("Fetch Latest", on_click=fetch_latest)
+        st.write("Topic Info")
+        st.write(topic_info[['CustomName', 'Topic', 'Count']])
+
     # Concatenate data and topics
     topics_df = pd.DataFrame({'topic': topics})
     df_with_topics = pd.concat([df, topics_df], axis=1)
@@ -80,8 +85,8 @@ def main():
             col1.write(f"**{row['title'].strip()}**")
             col1.write(row['link'])
             col1.write(row['published_date'])
-            col1.write("Belongs to topic: " +
-                       row['topic'] + " which is about ")
+            col1.write("Belongs to topic " +
+                       row['topic'])
 
             if col1.button("View", key=i):
                 article = data.iloc[i]
@@ -97,7 +102,8 @@ def main():
                     col2.write(f"**{row['title'].strip()}**")
                     col2.write(row['link'])
                     col2.write(row['published_date'])
-                    col2.write("Belongs to topic: " + row['topic'])
+                    col2.write("Belongs to topic " +
+                               row['topic'])
                     col2.divider()
 
             col1.divider()

@@ -201,6 +201,7 @@ def get_topic_info():
     topic_labels = trained_model.generate_topic_labels(
         separator=", ", topic_prefix=False)
     trained_model.set_topic_labels(topic_labels)
+    trained_model.save(file_path+"topic_model")
     return trained_model.get_topic_info()
 
 
