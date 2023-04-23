@@ -34,7 +34,11 @@ def get_items(project, spider_name):
 
         with open(file_path+'data.csv', mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(list(decoded_dict.values())[:4])
+
+            try:
+                writer.writerow(list(decoded_dict.values())[:4])
+            except:
+                pass
 
 
 def fetch_data():

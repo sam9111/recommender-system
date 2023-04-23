@@ -18,6 +18,12 @@ def fetch_latest():
         # Load data
         df = pd.read_csv('./data/data.csv', delimiter=',', header=0)
 
+        # filter out all rows that are from 2022
+
+        date_df = df[df['published_date'].str.contains('2022|2021')]
+
+        df = df.drop(date_df.index)
+
         df = df.dropna()
 
         df = df.drop_duplicates(subset=['processed_title'])

@@ -5,6 +5,7 @@ from indicnlp.tokenize import sentence_tokenize, indic_tokenize
 from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 import pickle
+import os
 
 file_path = "./data/"
 
@@ -192,6 +193,10 @@ def run(data):
         data, trained_model.topics_, strategy="c-tf-idf")
     trained_model.update_topics(
         data, topics=new_topics, vectorizer_model=vectorizer_model)
+
+    # delete old model
+    if os.path.exists(file_path+"topic_model"):
+        os.remove(file_path+"topic_model")
 
     trained_model.save(file_path+"topic_model")
 
