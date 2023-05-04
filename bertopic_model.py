@@ -1,6 +1,4 @@
 import numpy as np
-from bpemb import BPEmb
-import bpemb
 import torch
 from transformers import BertModel, BertTokenizerFast
 import pickle
@@ -15,7 +13,9 @@ file_path = "./data/"
 
 # Load BPEmb model for Tamil
 
-model = BPEmb(lang="ta", dim=300, vs=200000)
+
+tokenizer = BertTokenizerFast.from_pretrained("setu4993/LaBSE")
+model = BertModel.from_pretrained("setu4993/LaBSE")
 
 
 def tokenize_ta(text, return_tensors="pt", *args, **kwargs):
@@ -163,14 +163,17 @@ topic_model = BERTopic(
 
 def embeddings(docs):
 
-   # Generate embeddings for news_title column
-
-    embeds = []
-    for title in docs:
-        embed = model.embed(title)
-        embeds.append(np.mean(embed, axis=0))
-
-    embeds = np.array(embeds)
+    model.eval()
+    n_docs = len(docs)
+    batch_size = 8
+    embeds = torch.zeros((n_docs, model.config.hidden_size))
+    for i in range(0, n_docs, batch_size):
+        batch = docs[i:i+batch_size]
+        inputs = tokenizer(batch, return_tensors="pt", padding=True)
+        with torch.no_grad():
+            outputs = model(**inputs)
+        batch_embeddings = outputs.pooler_output
+        embeds[i:i+batch_size] = batch_embeddings
 
     with open(file_path+"embeddings.pkl", "wb") as f:
         pickle.dump(embeds, f)
@@ -180,7 +183,7 @@ def load_embeddings():
     with open(file_path+"embeddings.pkl", "rb") as f:
         embeds = pickle.load(f)
 
-        return embeds
+        return embeds.detach().numpy()
 
 
 def run(data):

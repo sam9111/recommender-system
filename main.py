@@ -20,7 +20,7 @@ def fetch_latest():
 
         # filter out all rows that are from 2022
 
-        date_df = df[df['published_date'].str.contains('2022|2021')]
+        date_df = df[df['published_date'].str.contains('2022|2021', na=False)]
 
         df = df.drop(date_df.index)
 
